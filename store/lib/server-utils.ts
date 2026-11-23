@@ -35,15 +35,16 @@ function signSession(id: string): string {
   return `${payload}.${sig}`;
 }
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+} as const;
+
 export async function createSession(id: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, signSession(id), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+  cookieStore.set(SESSION_COOKIE, signSession(id), { ...COOKIE_OPTIONS, maxAge: SESSION_MAX_AGE });
 }
 
 export async function verifySession(): Promise<{ id: string } | null> {
@@ -54,7 +55,7 @@ export async function verifySession(): Promise<{ id: string } | null> {
 
 export async function deleteSession(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.set(SESSION_COOKIE, "", { ...COOKIE_OPTIONS, maxAge: 0 });
 }
 
 export function jsonError(message: string, status: number): Response {
